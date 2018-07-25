@@ -1,0 +1,32 @@
+extends layout
+
+block content
+
+    h1= title
+    div(id = "map" class="map")
+    div(id = 'selectBoard')
+        div(id = 'travelMethodDiv')
+          Thing Travel Method
+          select(id = 'travelMethod' autocomplete="off")
+              //option(value=" ") Select a travel method
+              option(value = "A_AM" selected) Auto AM
+              option(value = "T_AM") Transit AM
+              option(value = "W_AM") Walk AM
+              option(value = "D") Distance
+        div(id = 'jobTypeDiv')
+          Thing Job Type
+          select(id = 'jobType' autocomplete="off")
+              //option(value=" ") Select a job type
+              option(value = "POP") POP
+              option(value = "Total Employment" selected) Total Employment
+              option(value = "PSE Enrolment") PSE Enrolment
+              option(value = "High School Enrl") High School Enrl
+    div(id="legendDiv")  
+      div(class='legendClass' id = 'dynamicLegend')
+        
+    script.
+
+      console.log($('#map').attr('id'))
+      //pass data to frontend from backend
+
+    script(src="/javascripts/test.js")
