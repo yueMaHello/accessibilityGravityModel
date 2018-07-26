@@ -2,21 +2,15 @@ var map;
 var geoJsonLayer1;
 var Distance_mf2 = '../data/Distance_mf2.csv';
 var SOV_AUTO_Time_AM_Cr_mf1 = '../data/SOV_AUTO_Time_AM_Cr_mf1.csv';
-// var Transit_1wait_Time_AM_Cr_mf1 = '../data/Transit_1wait_Time_AM_Cr_mf488.csv';
-// var Transit_IVT_Time_AM_Cr_mf492 = '../data/Transit_IVT_Time_AM_Cr_mf492.csv';
-// var Transit_RemWait_Time_AM_Cr_mf489 = '../data/Transit_RemWait_Time_AM_Cr_mf489.csv';
-// var Transit_Transfer_Time_AM_Cr_mf490 = '../data/Transit_Transfer_Time_AM_Cr_mf490.csv';
-// var Transit_Walk_Time_AM_Cr_mf491 = '../data/Transit_Walk_Time_AM_Cr_mf491.csv';
 var Transit_Total_Time_AM = '../data/Transit_Total_Time_AM.csv';
 var Walk_Time_AM_Cr_mf486 = '../data/Walk_Time_AM_Cr_mf486.csv';
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv';
-
 var travelType = 'A_AM';
 var jobType = 'Total Employment';
 var travelJson;
 var popEmp;
 var accessibilityResult;
-
+var travelTypeDict = {};
 var q = d3.queue();
 q.defer(d3.csv,Distance_mf2)
     .defer(d3.csv,SOV_AUTO_Time_AM_Cr_mf1)
@@ -25,40 +19,78 @@ q.defer(d3.csv,Distance_mf2)
     .defer(d3.csv,POP_EMP_PSE_HS)
     .await(brushMap);
 function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,pop_emp_pse_hs){
-
-    var distanceJson = buildMatrixLookup(distance_mf2);
-    var autoJson = buildMatrixLookup(sov_auto_time);
-    var transitJson = buildMatrixLookup(transit_total_time);
-    var walkJson = buildMatrixLookup(walk_time);
-    travelJson = autoJson;
+    travelTypeDict = {
+      'A_AM':buildMatrixLookup(sov_auto_time),
+      'D':buildMatrixLookup(distance_mf2),
+      'T_AM':buildMatrixLookup(transit_total_time),
+      'W_AM': buildMatrixLookup(walk_time)  
+    };
+    travelJson = travelTypeDict[travelType];//default
     popEmp = buildMatrixLookup2(pop_emp_pse_hs);
     require([
-      
+      "esri/geometry/Extent",
+      "dojo/dom-construct",
+      "esri/tasks/query",
+      "esri/dijit/Popup",
+      "esri/dijit/PopupTemplate",
+      "dojo/dom-class",
+      "esri/dijit/BasemapToggle",
       "esri/dijit/Legend",
         "../externalJS/geojsonlayer.js",
         "esri/map", "esri/layers/FeatureLayer",
-        "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol",
+        "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol",
         "esri/renderers/ClassBreaksRenderer",
         "esri/Color", "dojo/dom-style", "dojo/domReady!"
     ], function(
-      Legend,
+      Extent,domConstruct,
+      Query,Popup, PopupTemplate,domClass,BasemapToggle,Legend,
         GeoJsonLayer,Map, FeatureLayer,
-        InfoTemplate, SimpleFillSymbol,
+        InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,
         ClassBreaksRenderer,
         Color, domStyle
     ) {
+      
+        var popup = new Popup({
+          fillSymbol: new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+              new Color([255, 0, 0]), 2), new Color([255, 255, 0, 0.25]))
+        }, domConstruct.create("div"));
 
+        domClass.add(popup.domNode, "myTheme");
 
         map = new Map("map", {
-            basemap: "streets",
-            center: [-113.215, 53.382],
-            zoom: 7,
+            basemap: "dark-gray-vector",
+            center: [-113.4909, 53.5444],
+            zoom: 9,
+            minZoom:6,
+               infoWindow: popup,
             slider: false
         });
-        accessibilityResult = accessibilityCalculation(autoJson,jobType);
+        map.setInfoWindowOnClick(true);
+        
+        map.on("click", function (event) {
+          var query = new Query();
+          query.geometry = pointToExtent(map, event.mapPoint, 10);
+          var deferred = featureLayer.selectFeatures(query,
+            FeatureLayer.SELECTION_NEW);
+          map.infoWindow.setFeatures([deferred]);
+          map.infoWindow.show(event.mapPoint);
+        });
+
+        var toggle = new BasemapToggle({
+           map: map,
+           basemap: "topo"
+         }, "viewDiv");
+         
+         toggle.startup();
+         
+        var template = new InfoTemplate();
+        template.setContent(getTextContent);
+        accessibilityResult = accessibilityCalculation(travelJson,jobType);
         var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=zwpope-UYmNeuAwyc7QdyY3CtnSR3zD05XyI45tDO27Xza7jjV6mY12x-jU6leaGFEN1DTvH092WhWyC5LmwHxpaVePomdQhkPd86OblRRtzO-LAzKP4mtjKJNEpS4XMpCYydXMlXN24O7H1MxUT99Ay_ztPJDRRU5ZO_uKZf-3IJDEEPVPSPTTYloiTYMGiMrup6UeuP_h4fhCFYtnHD2rzjAj2vRvBDSc5j0gIPIoi9iqMsBlkYatgXsV-gLj0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
-            outFields: ["*"]
+            outFields: ["*"],
+            infoTemplate: template
         });
         var legendLayers = [];
         legendLayers.push({ layer: featureLayer, title: 'Edmonton Layer' });
@@ -68,22 +100,18 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
 
-
         function redrawLayer(ClassBreaksRenderer,accessibilityResult){
-          
+
             $('.legendClass').remove();
             var accessibilityResultArray = Object.values(accessibilityResult);
             var min = accessibilityResultArray.sort((prev, next) => prev - next)[0];
             var max =accessibilityResultArray.sort((prev, next) => next - prev)[0];
             var chunk = 8;
             var chunksize =(max-min)/chunk;
-            
-            
-          
             var symbol = new SimpleFillSymbol();
 
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
-                return accessibilityResult[feature.attributes["TAZ_New"]]
+                return accessibilityResult[feature.attributes.TAZ_New];
             });
 
             renderer.addBreak(0, chunksize, new SimpleFillSymbol().setColor(new Color([237,248,251, 1.0])));
@@ -107,32 +135,31 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             legend.startup();
             
         }
+        function pointToExtent (map, point, toleranceInPixel) {
+          var pixelWidth = map.extent.getWidth() / map.width;
+          var toleranceInMapCoords = toleranceInPixel * pixelWidth;
+          return new Extent(point.x - toleranceInMapCoords,
+                            point.y - toleranceInMapCoords,
+                            point.x + toleranceInMapCoords,
+                            point.y + toleranceInMapCoords,
+                            map.spatialReference);
+        }
+        function getTextContent (graphic) {
+          var speciesName = "<b>Value: </b><br/>" +
+                          "<i>" + accessibilityResult[graphic.attributes.TAZ_New] + "</i>";
+          return  speciesName;
+        }
 
         $("#travelMethod").change(function(){
-            if($(this).val() ==='A_AM'){
-              travelJson = autoJson;
-
-            }
-            else if($(this).val() ==='T_AM'){
-              travelJson = transitJson;
-      
-            }
-            else if($(this).val() ==='W_AM'){
-              travelJson = walkJson;
-
-            }
-            else if($(this).val() ==='D'){
-              travelJson = distanceJson
-    
-            }
+            travelJson = travelTypeDict[$(this).val()];
             accessibilityResult = accessibilityCalculation(travelJson,jobType);
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
         $('#jobType').change(function(){
           jobType = $(this).val();
-          accessibilityResult = accessibilityCalculation(travelJson,jobType)
+          accessibilityResult = accessibilityCalculation(travelJson,jobType);
           redrawLayer(ClassBreaksRenderer,accessibilityResult);
-        })
+        });
     });
 
 
@@ -142,11 +169,11 @@ function buildMatrixLookup(arr) {
     var lookup = {};
     var indexCol = Object.keys(arr[0]).filter(k => k.match(/\s+/) !== null);
     arr.forEach(row => {
-        let idx = row[indexCol];
+        var idx = row[indexCol];
         delete row[indexCol];
         var newRow = {};
         for(var key in row){
-            newRow[key] = parseFloat(row[key])
+            newRow[key] = parseFloat(row[key]);
         }
 
 
@@ -162,8 +189,6 @@ function buildMatrixLookup2(arr) {
 
     arr.forEach(row => {
         lookup[row[zoneName]]= row;
-
-
     });
     return lookup;
 }
