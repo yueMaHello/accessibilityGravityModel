@@ -1,8 +1,12 @@
+//- include main.html
 extends layout
 
 block content
 
     h1= title
+    label(class="switch")
+      input(type="checkbox" id = "interact")
+      span(class="slider")
     div(id = "map" class="map")
     div(id = 'selectBoard')
         div(id = 'travelMethodDiv')

@@ -49,11 +49,12 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         ClassBreaksRenderer,
         Color, domStyle
     ) {
-      
+        var connections = [];
+        
         var popup = new Popup({
-          fillSymbol: new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+          fillSymbol:
             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-              new Color([255, 0, 0]), 2), new Color([255, 255, 0, 0.25]))
+              new Color([255, 0, 0]), 2)
         }, domConstruct.create("div"));
 
         domClass.add(popup.domNode, "myTheme");
@@ -105,7 +106,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             $('.legendClass').remove();
             var accessibilityResultArray = Object.values(accessibilityResult);
             var min = accessibilityResultArray.sort((prev, next) => prev - next)[0];
-            var max =accessibilityResultArray.sort((prev, next) => next - prev)[0];
+            var max =accessibilityResultArray.sort((prev, next) => next - prev)[1];
             var chunk = 8;
             var chunksize =(max-min)/chunk;
             var symbol = new SimpleFillSymbol();
@@ -160,6 +161,53 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
           accessibilityResult = accessibilityCalculation(travelJson,jobType);
           redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
+        $("#interact").click(function(e, parameters) {
+            
+            if($("#interact").is(':checked')){
+                connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onClick', MouseClickhighlightGraphic));
+                connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onMouseOver', MouseOverhighlightGraphic));
+
+            }
+            else{
+              dojo.forEach(connections,dojo.disconnect);
+              accessibilityResult = accessibilityCalculation(travelJson,jobType);
+              redrawLayer(ClassBreaksRenderer,accessibilityResult);
+            }
+        });
+        
+        var MouseClickhighlightGraphic = function(evt) {
+            var graphic = evt.graphic;
+            selectZone = graphic.attributes.TAZ_New;
+            accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+            redrawLayer(ClassBreaksRenderer,accessibilityResult);
+        };
+        
+        var MouseOverhighlightGraphic = function(evt) {
+          var graphic = evt.graphic;
+          hoverZone = graphic.attributes.TAZ_New;
+          var access = accessibilityResult[hoverZone];
+
+
+          //console.log(graphic._graphicsLayer);
+          // assuming the graphic has a SimpleLineSymbol...
+          //symbol.setColor("red");
+          //graphic.setSymbol(symbol);
+
+          map.infoWindow.setTitle("<b>Zone Number: </b>"+hoverZone);
+          map.infoWindow.setContent("<b><font size=\"3\"> Value:</font> </b>"+ "<font size=\"4\">"+access.toFixed(2)+"</font>");
+          map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
+
+          // var highlightSymbol = new SimpleFillSymbol(
+          //     SimpleFillSymbol.STYLE_SOLID,
+          //     new SimpleLineSymbol(
+          //         SimpleLineSymbol.STYLE_SOLID,
+          //         new Color([255,0,0,0.5]), 3
+          //     ),
+          //     new Color([255,0,0,0.5])
+          // );
+          // var highlightGraphic = new Graphic(evt.graphic.geometry,highlightSymbol);
+          // map.graphics.add(highlightGraphic)
+      };
     });
 
 
@@ -209,4 +257,19 @@ function accessibilityCalculation(transitMatrix,jobType){
         accessibilityArray[zone] = result;
     }
     return accessibilityArray;
+}
+function individualCaculation(transitMatrix,jobType,selectedZone){
+    var accessibilityArray = {};
+    for(var destZone in transitMatrix[selectedZone]){
+      if(typeof(popEmp[destZone])!=='undefined'){
+        var num = transitMatrix[selectZone][destZone];
+        var enr = Number(popEmp[selectZone][jobType]);
+        if (Number(num)!==0 && isNaN(enr) === false){
+            accessibilityArray[destZone] =  enr/Math.pow(num,1.285);
+        }
+      }  
+    }
+    return accessibilityArray;
+  
+  
 }
