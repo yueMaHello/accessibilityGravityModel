@@ -1,5 +1,5 @@
-# Accessibility
-This is a Nodejs web application using Arcgis Javascript API
+# Job Accessibility
+This is a Nodejs web application using Arcgis Javascript API. It can analyze the job accessibilty of different zone.
 ## Set Up
 1. Download this folder
 2. Browse to the root of the folder
