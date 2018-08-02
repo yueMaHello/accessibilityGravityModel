@@ -14,6 +14,8 @@ var travelTypeDict = {};
 var q = d3.queue();
 var check = false;
 var largestIndividualArray = [];
+var largestAccessibilityArray = [];
+
 var selectZone = '101'; //default
 q.defer(d3.csv,Distance_mf2)
     .defer(d3.csv,SOV_AUTO_Time_AM_Cr_mf1)
@@ -70,9 +72,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             slider: false
         });
         map.setInfoWindowOnClick(true);
-
-
-
+        
         var toggle = new BasemapToggle({
            map: map,
            basemap: "streets"
@@ -82,6 +82,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
          
         var template = new InfoTemplate();
         template.setContent(getTextContent);
+        largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
         accessibilityResult = accessibilityCalculation(travelJson,jobType);
         var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=zwpope-UYmNeuAwyc7QdyY3CtnSR3zD05XyI45tDO27Xza7jjV6mY12x-jU6leaGFEN1DTvH092WhWyC5LmwHxpaVePomdQhkPd86OblRRtzO-LAzKP4mtjKJNEpS4XMpCYydXMlXN24O7H1MxUT99Ay_ztPJDRRU5ZO_uKZf-3IJDEEPVPSPTTYloiTYMGiMrup6UeuP_h4fhCFYtnHD2rzjAj2vRvBDSc5j0gIPIoi9iqMsBlkYatgXsV-gLj0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
@@ -117,9 +118,15 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               sort = largestIndividualResultArray.sort((prev,next)=>prev-next); //from smallest to largest
               
             }
+            // else{
+            // 
+            //   var accessibilityResultArray = Object.values(accessibilityResult);
+            //   sort = accessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
+            // }
             else{
-              var accessibilityResultArray = Object.values(accessibilityResult);
-              sort = accessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
+              var largestAccessibilityResultArray = Object.values(largestAccessibilityArray);
+            
+              sort = largestAccessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
             }
 
             var chunkZones = 74;        
@@ -127,6 +134,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               return parseInt(x, 10); 
             });  
             var symbol = new SimpleFillSymbol();
+                        // get the features within the current extent from the feature layer
+              
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
           
               var r = accessibilityResult[feature.attributes.TAZ_New];
@@ -152,6 +161,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             renderer.addBreak(sort[18*chunkZones], sort[20*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([44, 153, 27,0.90])));  
             renderer.addBreak(sort[20*chunkZones], sort[22*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([	37, 121, 24,0.90])));
             renderer.addBreak(sort[22*chunkZones], sort[sort.length-1]+1, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([11, 106, 18,0.90])));
+            renderer.addBreak(sort[sort.length-1]+1, Infinity, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([5, 80, 15,0.90])));
+
             featureLayer.setRenderer(renderer);
       
             featureLayer.redraw();
@@ -202,9 +213,10 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
 
           }
           else{
+            largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
             accessibilityResult = accessibilityCalculation(travelJson,jobType);
           }
-          redrawLayer(ClassBreaksRenderer,accessibilityResult)
+          redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
         $("#interact").click(function(e, parameters) {
             
@@ -331,6 +343,10 @@ function findRangeForIndividualCalcultion(transitMatrix,jobType){
           max = Number(popEmp[k][jobType]);
       }
   }
-  var largestAccessibilityArray = individualCaculation(transitMatrix,jobType,TAZ);
+  var largestIndividualArray = individualCaculation(transitMatrix,jobType,TAZ);
+  return largestIndividualArray;
+}
+function findRangeForAccessibilityCalculation(jobType){
+  var largestAccessibilityArray = accessibilityCalculation(travelTypeDict.A_AM,jobType);
   return largestAccessibilityArray;
 }
