@@ -14,8 +14,8 @@ h1{
   display: inline-block;
   width: 55px;
   height: 25px;
-  margin-top:1px;
-  margin-left:15px;
+  margin-top:50px;
+  margin-left:20px;
   z-index:50;
 }
 
@@ -61,7 +61,7 @@ input:checked + .slider:before {
 }
 #viewDiv{
   position: absolute;
-  top: 200px;
+  top: 100px;
   right: 20px;
   z-index: 50;
 }
@@ -81,15 +81,16 @@ input:checked + .slider:before {
   border-style: groove;
   background-color: #e6e6e6;
   text-align: center
-
 }
 
 #legendDiv {
   position:absolute;
   top:400px;
   left:20px;
+  height:300px;
+  overflow-y: scroll;
   z-index:50;
-  width:300px;
+  width:200px;
   border-style: groove;
   background-color: #e6e6e6;
 
