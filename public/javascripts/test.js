@@ -15,7 +15,7 @@ var q = d3.queue();
 var check = false;
 var largestIndividualArray = [];
 var largestAccessibilityArray = [];
-
+var relativeLegend = true;
 var selectZone = '101'; //default
 q.defer(d3.csv,Distance_mf2)
     .defer(d3.csv,SOV_AUTO_Time_AM_Cr_mf1)
@@ -110,28 +110,15 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         });
 
         function redrawLayer(ClassBreaksRenderer,accessibilityResult){
-
             $('.legendClass').remove();
-
-            // console.log(accessibilityResultArray)
-            
-            
-            // var min = accessibilityResultArray.sort((prev, next) => prev - next)[0];
-            // var max =accessibilityResultArray.sort((prev, next) => next - prev)[1];
             var sort = [];
             if(check === true){
               var largestIndividualResultArray = Object.values(largestIndividualArray);
               sort = largestIndividualResultArray.sort((prev,next)=>prev-next); //from smallest to largest
               
             }
-            // else{
-            // 
-            //   var accessibilityResultArray = Object.values(accessibilityResult);
-            //   sort = accessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
-            // }
             else{
-              var largestAccessibilityResultArray = Object.values(largestAccessibilityArray);
-            
+              var largestAccessibilityResultArray = Object.values(largestAccessibilityArray);          
               sort = largestAccessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
             }
 
@@ -143,9 +130,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
                         // get the features within the current extent from the feature layer
               
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
-          
               var r = accessibilityResult[feature.attributes.TAZ_New];
-  
               return accessibilityResult[feature.attributes.TAZ_New];
             });
             // renderer.addBreak(-Infinity,0, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([153, 153, 153,0.90])));
@@ -179,8 +164,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               map: map,
               layerInfos: legendLayers
             }, string);            
-            legend.startup();
-            
+            legend.startup();    
         }
         function pointToExtent (map, point, toleranceInPixel) {
           var pixelWidth = map.extent.getWidth() / map.width;
@@ -196,26 +180,42 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
                           "<i>" + accessibilityResult[graphic.attributes.TAZ_New] + "</i>";
           return  speciesName;
         }
-
-        $("#travelMethod").change(function(){
-            travelJson = travelTypeDict[$(this).val()];
-    
-            if(check === true){
-              accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
-
+        $('input:radio[name=selectLegend]').change(function() {
+            if (this.value === 'relative') {
+                relativeLegend = true;
             }
             else{
+                relativeLegend = false;
+            }
+            if(check === true){
+              largestIndividualArray = findRangeForIndividualCalcultion(jobType);
+            }
+            else{
+              largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
+            }
+            redrawLayer(ClassBreaksRenderer,accessibilityResult);
+        });
+        $("#travelMethod").change(function(){
+            travelJson = travelTypeDict[$(this).val()];
+            if(check === true){
+              if(!relativeLegend){
+                largestIndividualArray = findRangeForIndividualCalcultion(jobType);
+              }
+              accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+            }
+            else{
+              if(!relativeLegend){
+                largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
+              }
               accessibilityResult = accessibilityCalculation(travelJson,jobType);
             }
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
-
         });
         $('#jobType').change(function(){
           jobType = $(this).val();
           if(check === true){
             largestIndividualArray = findRangeForIndividualCalcultion(jobType);
             accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
-
           }
           else{
             largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
@@ -339,32 +339,51 @@ function individualCaculation(transitMatrix,jobType,selectedZone){
     return accessibilityArray;
 }
 function findRangeForIndividualCalcultion(jobType){
-  var dict = {};
-  var TAZ = 0;
-  for(var k in popEmp){
-          dict[popEmp[k]['New Zone']] = Number(popEmp[k][jobType]);
-  }
-  
+  if(relativeLegend === true){
+    var dict = {};
+    var TAZ = 0;
+    for(var k in popEmp){
+            dict[popEmp[k]['New Zone']] = Number(popEmp[k][jobType]);
+    }
     // Create items array
-  var items = Object.keys(dict).map(function(key) {
-    return [key, dict[key]];
-  });
+    var items = Object.keys(dict).map(function(key) {
+      return [key, dict[key]];
+    });
+    // Sort the array based on the second element
+    items.sort(function(first, second) {
+      return second[1] - first[1];
+    });
+    while(items[items.length-1][1] === 0){ // While the last element is a 0,
+        items.pop();                  // Remove that last element
+    }
+    TAZ = items[parseInt(items.length/22)][0];
+    var largestIndividualArray = individualCaculation(travelTypeDict.A_AM,jobType,TAZ);
+    return largestIndividualArray;
+    
+  }
+  else{
+    console.log('dddd')
+    var TAZ = 0;
+    var max = 0;
+    for(var k in popEmp){
+        if(Number(popEmp[k][jobType])>max){
+            TAZ = popEmp[k]['New Zone'];
+            max = Number(popEmp[k][jobType]);
+        }
+    }
+    var largestAccessibilityArray = individualCaculation(travelJson,jobType,TAZ);
+    return largestAccessibilityArray;
+  }
+}
 
-  // Sort the array based on the second element
-  items.sort(function(first, second) {
-    return second[1] - first[1];
-  });
-  while(items[items.length-1][1] === 0){ // While the last element is a 0,
-      items.pop();                  // Remove that last element
+function findRangeForAccessibilityCalculation(jobType){
+  if(relativeLegend === true){
+    var largestAccessibilityArray = accessibilityCalculation(travelTypeDict.A_AM,jobType);
+    return largestAccessibilityArray;
+  }
+  else{
+    var largestAccessibilityArray = accessibilityCalculation(travelJson,jobType);
+    return largestAccessibilityArray;
   }
 
-  TAZ = items[parseInt(items.length/22)][0];
-
-  var largestIndividualArray = individualCaculation(travelTypeDict.A_AM,jobType,TAZ);
-
-  return largestIndividualArray;
-}
-function findRangeForAccessibilityCalculation(jobType){
-  var largestAccessibilityArray = accessibilityCalculation(travelTypeDict.A_AM,jobType);
-  return largestAccessibilityArray;
 }
