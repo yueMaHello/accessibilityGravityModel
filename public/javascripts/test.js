@@ -125,20 +125,18 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               return parseInt(x, 10); 
             });  
             var symbol = new SimpleFillSymbol();
-                        // get the features within the current extent from the feature layer
-              
+
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
               var r = accessibilityResult[feature.attributes.TAZ_New];
               return accessibilityResult[feature.attributes.TAZ_New];
             });
-            // renderer.addBreak(-Infinity,0, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([153, 153, 153,0.90])));
             renderer.addBreak(0, sort[chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([255, 255, 255,0.90])));
             renderer.addBreak(sort[chunkZones], sort[2*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([	249, 238, 237,0.90])));
             renderer.addBreak(sort[2*chunkZones], sort[3*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([243, 224, 219,0.90])));
             renderer.addBreak(sort[3*chunkZones], sort[4*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([237, 214, 202,0.90])));
-            renderer.addBreak( sort[4*chunkZones], sort[5*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([225, 200, 170,0.90])));
-            renderer.addBreak( sort[5*chunkZones],  sort[6*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([213, 196, 141,0.90])));
-            renderer.addBreak( sort[6*chunkZones],  sort[7*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([207, 197, 127,0.90])));
+            renderer.addBreak(sort[4*chunkZones], sort[5*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([225, 200, 170,0.90])));
+            renderer.addBreak(sort[5*chunkZones],  sort[6*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([213, 196, 141,0.90])));
+            renderer.addBreak(sort[6*chunkZones],  sort[7*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([207, 197, 127,0.90])));
             renderer.addBreak(sort[7*chunkZones], sort[8*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([201, 199, 113,0.90])));
             renderer.addBreak(sort[8*chunkZones], sort[9*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([185, 195, 101,0.90])));
             renderer.addBreak(sort[9*chunkZones], sort[10*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([168, 189, 88,0.90])));
@@ -151,11 +149,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             renderer.addBreak(sort[20*chunkZones], sort[22*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([	37, 121, 24,0.90])));
             renderer.addBreak(sort[22*chunkZones], sort[sort.length-1]+1, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([11, 106, 18,0.90])));
             renderer.addBreak(sort[sort.length-1]+1, Infinity, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([5, 80, 15,0.90])));
-
             featureLayer.setRenderer(renderer);
-      
             featureLayer.redraw();
-            
             var string = 'dynamicLegend'+ Math.random().toString(36).substring(7);
             $('#legendDiv').append('<div class="legendClass" id = "'+string+'"</div>');  
             var legend = new Legend({
@@ -222,7 +217,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
           redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
         $("#interact").click(function(e, parameters) {
-            
             if($("#interact").is(':checked')){
                 check = true;
                 connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onClick', MouseClickhighlightGraphic));
@@ -230,7 +224,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
                 largestIndividualArray = findRangeForIndividualCalcultion(jobType);
                 accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
                 redrawLayer(ClassBreaksRenderer,accessibilityResult);
-
             }
             else{
               check = false;
@@ -239,7 +232,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               redrawLayer(ClassBreaksRenderer,accessibilityResult);
             }
         });
-        
         var MouseClickhighlightGraphic = function(evt) {
             var graphic = evt.graphic;
             selectZone = graphic.attributes.TAZ_New;
@@ -268,8 +260,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
           map.infoWindow.show(evt.screenPoint,map.getInfoWindowAnchor(evt.screenPoint));
       };
     });
-
-
 }
 
 function buildMatrixLookup(arr) {
@@ -282,27 +272,21 @@ function buildMatrixLookup(arr) {
         for(var key in row){
             newRow[key] = parseFloat(row[key]);
         }
-
-
         lookup[idx] = newRow;
     });
     return lookup;
 }
 
 function buildMatrixLookup2(arr) {
-
     var lookup = {};
     var zoneName = Object.keys(arr[0])[1];
-
     arr.forEach(row => {
         for(var k in row){
-          
           row[k] = row[k].replace(',','');
           row[k] = row[k].replace('-','');
           row[k] = row[k].replace(' ','');
         }
         lookup[row[zoneName]]= row;
-        
     });
     return lookup;
 }
@@ -357,7 +341,6 @@ function findRangeForIndividualCalcultion(jobType){
     TAZ = items[parseInt(items.length/22)][0];
     var largestIndividualArray = individualCaculation(travelTypeDict.A_AM,jobType,TAZ);
     return largestIndividualArray;
-    
   }
   else{
     var TAZ = 0;
