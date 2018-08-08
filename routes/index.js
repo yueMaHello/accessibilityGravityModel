@@ -2,8 +2,7 @@ var express = require('express');
 var router = express.Router();
 var conString = "";
 var obj = "1";
-var fs = require('fs');
-var RSVP = require('RSVP');
+
 
 // 
 // console.log('1');

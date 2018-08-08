@@ -89,6 +89,11 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             outFields: ["*"],
             infoTemplate: template
         });
+        var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0?token=8ulK33e1cubPoKiLq5MxH9EpaN_wuyYRrMTiwsYkGKnPgYFbII8tkvV5i9Dk6tz2jVqY-_Zx-0-GXY3DeSVbtpo0NlLxEjFuPwpccMNBTGZwZsVYNrqBui-6DhEyve8rnD3qGPg_2pun9hFotDWSmlWAQn41B_Sop7pr9KLSS64H_CiMRPW0GZ9Bn6gPWkR8d0CZQ6fUoctmBUJp4gvRdf6vroPETCE9zJ2OFUdPto1Xm2pxvDc7Y5mDPT_ZOXbi",{
+            mode: FeatureLayer.MODE_SNAPSHOT,
+            outFields: ["*"],
+            infoTemplate: template
+        });
         featureLayer.on('click',function(evt){
           
           var graphic = evt.graphic;
@@ -97,9 +102,10 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         })
     
         var legendLayers = [];
-        legendLayers.push({ layer: featureLayer, title: 'Legend' });
+        legendLayers.push({layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
         map.on('load',function(){
             map.addLayer(featureLayer);
+            map.addLayer(lrtFeatureLayer);
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
 
@@ -172,7 +178,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             var legend = new Legend({
               map: map,
               layerInfos: legendLayers
-            }, string);
+            }, string);            
             legend.startup();
             
         }
@@ -195,7 +201,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             travelJson = travelTypeDict[$(this).val()];
     
             if(check === true){
-              largestIndividualArray = findRangeForIndividualCalcultion(travelJson,jobType);
               accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
 
             }
@@ -208,7 +213,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         $('#jobType').change(function(){
           jobType = $(this).val();
           if(check === true){
-            largestIndividualArray = findRangeForIndividualCalcultion(travelJson,jobType);
+            largestIndividualArray = findRangeForIndividualCalcultion(jobType);
             accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
 
           }
@@ -224,7 +229,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
                 check = true;
                 connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onClick', MouseClickhighlightGraphic));
                 connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onMouseOver', MouseOverhighlightGraphic));
-                largestIndividualArray = findRangeForIndividualCalcultion(travelJson,jobType);
+                largestIndividualArray = findRangeForIndividualCalcultion(jobType);
                 accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
                 redrawLayer(ClassBreaksRenderer,accessibilityResult);
 
@@ -325,7 +330,7 @@ function individualCaculation(transitMatrix,jobType,selectedZone){
     var enr = parseFloat(popEmp[selectedZone][jobType]);
     for(var destZone in transitMatrix[selectedZone]){
       if(typeof(popEmp[selectedZone])!=='undefined'){
-        var num = transitMatrix[selectedZone][destZone];
+        var num = transitMatrix[destZone][selectedZone];
         if (Number(num)!==0 && isNaN(enr) === false){
             accessibilityArray[destZone] =  enr/Math.pow(num,1.285);
         }
@@ -333,17 +338,30 @@ function individualCaculation(transitMatrix,jobType,selectedZone){
     }
     return accessibilityArray;
 }
-function findRangeForIndividualCalcultion(transitMatrix,jobType){
-
+function findRangeForIndividualCalcultion(jobType){
+  var dict = {};
   var TAZ = 0;
-  var max = 0;
   for(var k in popEmp){
-      if(Number(popEmp[k][jobType])>max){
-          TAZ = popEmp[k]['New Zone'];
-          max = Number(popEmp[k][jobType]);
-      }
+          dict[popEmp[k]['New Zone']] = Number(popEmp[k][jobType]);
   }
-  var largestIndividualArray = individualCaculation(transitMatrix,jobType,TAZ);
+  
+    // Create items array
+  var items = Object.keys(dict).map(function(key) {
+    return [key, dict[key]];
+  });
+
+  // Sort the array based on the second element
+  items.sort(function(first, second) {
+    return second[1] - first[1];
+  });
+  while(items[items.length-1][1] === 0){ // While the last element is a 0,
+      items.pop();                  // Remove that last element
+  }
+
+  TAZ = items[parseInt(items.length/22)][0];
+
+  var largestIndividualArray = individualCaculation(travelTypeDict.A_AM,jobType,TAZ);
+
   return largestIndividualArray;
 }
 function findRangeForAccessibilityCalculation(jobType){
