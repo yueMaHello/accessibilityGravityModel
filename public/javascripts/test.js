@@ -7,7 +7,6 @@ var Walk_Time_AM_Cr_mf486 = '../data/Walk_Time_AM_Cr_mf486.csv';
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv';
 var travelType = 'A_AM';
 var jobType = 'Total Employment';
-var travelJson;
 var popEmp;
 var accessibilityResult;
 var travelTypeDict = {};
@@ -30,7 +29,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
       'T_AM':buildMatrixLookup(transit_total_time),
       'W_AM': buildMatrixLookup(walk_time)  
     };
-    travelJson = travelTypeDict[travelType];//default
     popEmp = buildMatrixLookup2(pop_emp_pse_hs);
     require([
       "esri/geometry/Polyline",
@@ -83,7 +81,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         var template = new InfoTemplate();
         template.setContent(getTextContent);
         largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
-        accessibilityResult = accessibilityCalculation(travelJson,jobType);
+        accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
         var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=zwpope-UYmNeuAwyc7QdyY3CtnSR3zD05XyI45tDO27Xza7jjV6mY12x-jU6leaGFEN1DTvH092WhWyC5LmwHxpaVePomdQhkPd86OblRRtzO-LAzKP4mtjKJNEpS4XMpCYydXMlXN24O7H1MxUT99Ay_ztPJDRRU5ZO_uKZf-3IJDEEPVPSPTTYloiTYMGiMrup6UeuP_h4fhCFYtnHD2rzjAj2vRvBDSc5j0gIPIoi9iqMsBlkYatgXsV-gLj0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
@@ -196,18 +194,18 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
         $("#travelMethod").change(function(){
-            travelJson = travelTypeDict[$(this).val()];
+            travelType = $(this).val();
             if(check === true){
               if(!relativeLegend){
                 largestIndividualArray = findRangeForIndividualCalcultion(jobType);
               }
-              accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+              accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
             }
             else{
               if(!relativeLegend){
                 largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
               }
-              accessibilityResult = accessibilityCalculation(travelJson,jobType);
+              accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
             }
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
@@ -215,11 +213,11 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
           jobType = $(this).val();
           if(check === true){
             largestIndividualArray = findRangeForIndividualCalcultion(jobType);
-            accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+            accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
           }
           else{
             largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
-            accessibilityResult = accessibilityCalculation(travelJson,jobType);
+            accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
           }
           redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
@@ -230,14 +228,14 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
                 connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onClick', MouseClickhighlightGraphic));
                 connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onMouseOver', MouseOverhighlightGraphic));
                 largestIndividualArray = findRangeForIndividualCalcultion(jobType);
-                accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+                accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
                 redrawLayer(ClassBreaksRenderer,accessibilityResult);
 
             }
             else{
               check = false;
               dojo.forEach(connections,dojo.disconnect);
-              accessibilityResult = accessibilityCalculation(travelJson,jobType);
+              accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
               redrawLayer(ClassBreaksRenderer,accessibilityResult);
             }
         });
@@ -245,7 +243,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         var MouseClickhighlightGraphic = function(evt) {
             var graphic = evt.graphic;
             selectZone = graphic.attributes.TAZ_New;
-            accessibilityResult = individualCaculation(travelJson,jobType,selectZone);
+            accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
             var query = new Query();
             query.geometry = pointToExtent(map, event.mapPoint, 10);
             var deferred = featureLayer.selectFeatures(query,
@@ -362,7 +360,6 @@ function findRangeForIndividualCalcultion(jobType){
     
   }
   else{
-    console.log('dddd')
     var TAZ = 0;
     var max = 0;
     for(var k in popEmp){
@@ -371,19 +368,17 @@ function findRangeForIndividualCalcultion(jobType){
             max = Number(popEmp[k][jobType]);
         }
     }
-    var largestAccessibilityArray = individualCaculation(travelJson,jobType,TAZ);
+    var largestAccessibilityArray = individualCaculation(travelTypeDict[travelType],jobType,TAZ);
     return largestAccessibilityArray;
   }
 }
 
 function findRangeForAccessibilityCalculation(jobType){
   if(relativeLegend === true){
-    var largestAccessibilityArray = accessibilityCalculation(travelTypeDict.A_AM,jobType);
-    return largestAccessibilityArray;
+    return accessibilityCalculation(travelTypeDict.A_AM,jobType);
   }
   else{
-    var largestAccessibilityArray = accessibilityCalculation(travelJson,jobType);
-    return largestAccessibilityArray;
+    return accessibilityCalculation(travelTypeDict[travelType],jobType);
   }
 
 }
