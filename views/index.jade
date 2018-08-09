@@ -8,6 +8,8 @@ block content
       input(type="checkbox" id = "interact")
       span(class="slider")
     div(id = "map" class="map")
+      span(id="info" style="position:absolute; left:15px; bottom:5px; color:#000; z-index:50;")
+
     div(id = 'selectBoard')
         div(id = 'travelMethodDiv')
           Thing Travel Mode: 
@@ -29,13 +31,12 @@ block content
     div(id="legendDiv")  
       div(class='legendClass' id = 'dynamicLegend')
     div(id="legendControl")
-      input(type = 'radio' name = 'selectLegend' id = 'relativeLegend' value = 'relative' checked)
-      Thing Relative to Auto
-      input(type = 'radio' name = 'selectLegend' id = 'absoluteLegend' value = 'absolute')
-      Thing Absolute
-    script.
-
-      console.log($('#map').attr('id'))
-      //pass data to frontend from backend
-
+      label(class='container')
+        input(type = 'radio' name = 'selectLegend' id = 'relativeLegend' value = 'relative' checked)
+        Thing Relative to Auto
+      label(class='container')
+        input(type = 'radio' name = 'selectLegend' id = 'absoluteLegend' value = 'absolute')
+        Thing Absolute
+    div(id='informationDiv')
+        p text
     script(src="/javascripts/test.js")

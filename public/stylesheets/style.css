@@ -101,12 +101,28 @@ h1{
   left: 20px;
   top:720px;
   display: block;
+  border-style: groove;
+  width:200px;
+  background-color: #e6e6e6;
 }
 
 #travelMethod,#jobType{
   margin-bottom:50px;
 }
-
+#informationDiv{
+  position: absolute;
+  width:200px;
+  top: 200px;
+  height:300px;
+  right: 20px;
+  z-index: 50;
+  border-style: groove;
+  background-color: #e6e6e6;
+  text-align: center
+}
+.container {
+    display: block;
+      position: relative;}
 select {
   height: 25px;
   border-radius: 5px;

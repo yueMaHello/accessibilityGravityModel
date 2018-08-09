@@ -30,11 +30,15 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
       'W_AM': buildMatrixLookup(walk_time)  
     };
     popEmp = buildMatrixLookup2(pop_emp_pse_hs);
-    require([
+    require(["esri/renderers/SimpleRenderer","esri/SpatialReference","esri/geometry/Point",
+"esri/geometry/webMercatorUtils","dojo/dom",
+      "esri/layers/GraphicsLayer",
       "esri/geometry/Polyline",
       "esri/geometry/Extent",
       "dojo/dom-construct",
       "esri/tasks/query",
+      "esri/graphic",
+ "dojo/_base/array",
       "esri/dijit/Popup",
       "esri/dijit/PopupTemplate",
       "dojo/dom-class",
@@ -42,19 +46,20 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
       "esri/dijit/Legend",
         "../externalJS/geojsonlayer.js",
         "esri/map", "esri/layers/FeatureLayer",
-        "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol",
+        "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol","esri/symbols/SimpleMarkerSymbol",
         "esri/renderers/ClassBreaksRenderer",
         "esri/Color", "dojo/dom-style", "dojo/domReady!"
-    ], function(Polyline,
+    ], function(SimpleRenderer,SpatialReference,Point,webMercatorUtils,dom,GraphicsLayer,Polyline,
       Extent,domConstruct,
-      Query,Popup, PopupTemplate,domClass,BasemapToggle,Legend,
+      Query,Graphic,arrayUtils,Popup, PopupTemplate,domClass,BasemapToggle,Legend,
         GeoJsonLayer,Map, FeatureLayer,
-        InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,
+        InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,SimpleMarkerSymbol,
         ClassBreaksRenderer,
         Color, domStyle
-    ) {
+    ) {      
+        var viewSpatialReference = new SpatialReference({wkid: 4326});
         var connections = [];
-        
+        // var PSELayer;
         var popup = new Popup({  
           fillSymbol:
             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
@@ -71,18 +76,19 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         });
         map.setInfoWindowOnClick(true);
         
+        
         var toggle = new BasemapToggle({
            map: map,
            basemap: "streets"
          }, "viewDiv");
          
-         toggle.startup();
+        toggle.startup();
          
         var template = new InfoTemplate();
         template.setContent(getTextContent);
         largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
         accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
-        var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=zwpope-UYmNeuAwyc7QdyY3CtnSR3zD05XyI45tDO27Xza7jjV6mY12x-jU6leaGFEN1DTvH092WhWyC5LmwHxpaVePomdQhkPd86OblRRtzO-LAzKP4mtjKJNEpS4XMpCYydXMlXN24O7H1MxUT99Ay_ztPJDRRU5ZO_uKZf-3IJDEEPVPSPTTYloiTYMGiMrup6UeuP_h4fhCFYtnHD2rzjAj2vRvBDSc5j0gIPIoi9iqMsBlkYatgXsV-gLj0",{
+        var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=8gOmRemAl8guD3WA_rfLwe50SgsEvaZzIcXIraH9xC3NQPCLraLwcHIkz3osWU-SHUdSKO1N6rCnWDF_CzWLFlFFUCeugETS44f409SsCtX9eC-HoX0dkXZj2vQD1SsboTGNgAzLDtG-BfIv0FnlWBNqq84hC5a6e7lj2Tt1oV8V0WxGiCE7rtaXgxZr18TZur-l_T6gWW2jDh1mt5q0mqty8vc133DvOtg5JhtGm8OTdn9rYtscRKu66B153RYB",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
             infoTemplate: template
@@ -90,23 +96,56 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0?token=8ulK33e1cubPoKiLq5MxH9EpaN_wuyYRrMTiwsYkGKnPgYFbII8tkvV5i9Dk6tz2jVqY-_Zx-0-GXY3DeSVbtpo0NlLxEjFuPwpccMNBTGZwZsVYNrqBui-6DhEyve8rnD3qGPg_2pun9hFotDWSmlWAQn41B_Sop7pr9KLSS64H_CiMRPW0GZ9Bn6gPWkR8d0CZQ6fUoctmBUJp4gvRdf6vroPETCE9zJ2OFUdPto1Xm2pxvDc7Y5mDPT_ZOXbi",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
-            infoTemplate: template
+        });
+        
+        // PSELayer = addPSELocation();
+        var pseLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/pse/FeatureServer/0?token=Z-SDaJDXBiNKlWI9q05NjRiKcjoysekbM2vYNhYD6gETiJzS7IggUYgO3fQ8yua2FMceup7wEsz440QpyduUiuu-OoAUMsjIOaqgrhjAU3oqoorIKY6HsM1-jpLgNPof-YrNhlTq04cJs9Soi0RqIjr3gCtuCaR74_0mLSjVN42R2okTrgOl7pr7thQEdveBKh6zNGgmrYMJiGtGA6dLwUgpJC59-9RL63-SoxDZdLDiwygEyy3wMP_lKcCbOPPU",{
+            mode: FeatureLayer.MODE_SNAPSHOT,
+            outFields: ["*"],
+      
         });
         featureLayer.on('click',function(evt){
-          
           var graphic = evt.graphic;
           selectZone = graphic.attributes.TAZ_New;
           
-        })
+        });
     
         var legendLayers = [];
-        legendLayers.push({layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
         map.on('load',function(){
+            map.on("mouse-move", showCoordinates);
+            
             map.addLayer(featureLayer);
             map.addLayer(lrtFeatureLayer);
+            map.addLayer(pseLayer)
+            legendLayers.push({layer:pseLayer,title:'PSE'},{layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
-
+  
+        // 
+        // function addPSELocation(){
+        //   var squareSymbol = new SimpleMarkerSymbol({
+        //       "color":[0,0,128,128],
+        //       "size":10,
+        //       "angle":0,
+        //       "xoffset":0,
+        //       "yoffset":0,
+        //       "type":"esriSMS",
+        //       "style":"esriSMSCircle",
+        //       "outline":{"color":[0,0,128,255],
+        //           "width":1,
+        //           "type":"esriSLS",
+        //           "style":"esriSLSSolid"
+        //       }
+        //   });
+        //   var layer = new GraphicsLayer();
+        //   var PSEpoints = [[-113.525,53.528],[-113.413,53.524],[-113.451,53.531],[-113.505,53.568],[-113.506,53.547],[-113.587,53.54],[-113.632,53.640],[-113.508,53.540]];
+        //   arrayUtils.forEach(PSEpoints, function(point) {
+        //      var graphic = new Graphic(new Point(point),squareSymbol);
+        //      layer.add(graphic);
+        //   });
+        //   return layer;
+        // }
+        
         function redrawLayer(ClassBreaksRenderer,accessibilityResult){
             $('.legendClass').remove();
             var sort = [];
@@ -159,16 +198,10 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             }, string);            
             legend.startup();    
         }
-        function pointToExtent (map, point, toleranceInPixel) {
-          var pixelWidth = map.extent.getWidth() / map.width;
-          var toleranceInMapCoords = toleranceInPixel * pixelWidth;
-          return new Extent(point.x - toleranceInMapCoords,
-                            point.y - toleranceInMapCoords,
-                            point.x + toleranceInMapCoords,
-                            point.y + toleranceInMapCoords,
-                            map.spatialReference);
-        }
+
         function getTextContent (graphic) {
+
+          selectZone = graphic.attributes.TAZ_New;
           var speciesName = "<b>Value: </b><br/>" +
                           "<i>" + accessibilityResult[graphic.attributes.TAZ_New] + "</i>";
           return  speciesName;
@@ -219,8 +252,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         $("#interact").click(function(e, parameters) {
             if($("#interact").is(':checked')){
                 check = true;
-                connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onClick', MouseClickhighlightGraphic));
-                connections.push(dojo.connect(map.getLayer(map.graphicsLayerIds[0]), 'onMouseOver', MouseOverhighlightGraphic));
+                connections.push(dojo.connect(map, 'onClick', MouseClickhighlightGraphic));
+                connections.push(dojo.connect(featureLayer, 'onMouseOver', MouseOverhighlightGraphic));
                 largestIndividualArray = findRangeForIndividualCalcultion(jobType);
                 accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
                 redrawLayer(ClassBreaksRenderer,accessibilityResult);
@@ -228,28 +261,27 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             else{
               check = false;
               dojo.forEach(connections,dojo.disconnect);
+              largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
               accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
               redrawLayer(ClassBreaksRenderer,accessibilityResult);
             }
         });
+        function showCoordinates(evt) {
+            //the map is in web mercator but display coordinates in geographic (lat, long)
+            var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
+            //display mouse coordinates
+            dom.byId("info").innerHTML = mp.x.toFixed(3) + ", " + mp.y.toFixed(3);
+          }
         var MouseClickhighlightGraphic = function(evt) {
-            var graphic = evt.graphic;
-            selectZone = graphic.attributes.TAZ_New;
             accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
-            var query = new Query();
-            query.geometry = pointToExtent(map, event.mapPoint, 10);
-            var deferred = featureLayer.selectFeatures(query,
-              FeatureLayer.SELECTION_NEW);
-            map.infoWindow.setFeatures([deferred]);
-            map.infoWindow.show(event.mapPoint);
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         };
         
         var MouseOverhighlightGraphic = function(evt) {
-          var graphic = evt.graphic;
-          hoverZone = graphic.attributes.TAZ_New;
-          var access = accessibilityResult[hoverZone];
+          hoverZone = evt.graphic.attributes.TAZ_New;
+          console.log(hoverZone)
 
+          var access = accessibilityResult[hoverZone];
           map.infoWindow.setTitle("<b>Zone Number: </b>"+hoverZone);
           if(typeof(access)!=='undefined'){
             map.infoWindow.setContent("<b><font size=\"3\"> Value:</font> </b>"+ "<font size=\"4\">"+access.toFixed(2)+"</font>");
