@@ -117,7 +117,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             map.addLayer(featureLayer);
             map.addLayer(lrtFeatureLayer);
             map.addLayer(pseLayer)
-            legendLayers.push({layer:pseLayer,title:'PSE'},{layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
+            legendLayers.push({layer:pseLayer,title:'Institutions'},{layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
   
@@ -295,18 +295,18 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
 }
 
 function buildMatrixLookup(arr) {
-    var lookup = {};
-    var indexCol = Object.keys(arr[0]).filter(k => k.match(/\s+/) !== null);
-    arr.forEach(row => {
-        var idx = row[indexCol];
-        delete row[indexCol];
-        var newRow = {};
-        for(var key in row){
-            newRow[key] = parseFloat(row[key]);
-        }
-        lookup[idx] = newRow;
-    });
-    return lookup;
+  var lookup = {};
+  var index = arr.columns;
+  var verbal = index[0];
+  for(var i =0; i<arr.length;i++){
+    var k = arr[i][verbal];
+  
+    delete arr[i][verbal];
+  
+    lookup[parseInt(k)] = Object.keys(arr[i]).reduce((obj, key) => (obj[parseInt(key)] = Number(arr[i][key]),obj), {});
+  }
+
+  return lookup;
 }
 
 function buildMatrixLookup2(arr) {
