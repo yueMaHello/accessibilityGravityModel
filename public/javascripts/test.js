@@ -1,5 +1,4 @@
 var map;
-var geoJsonLayer1;
 var Distance_mf2 = '../data/Distance_mf2.csv';
 var SOV_AUTO_Time_AM_Cr_mf1 = '../data/SOV_AUTO_Time_AM_Cr_mf1.csv';
 var Transit_Total_Time_AM = '../data/Transit_Total_Time_AM.csv';
