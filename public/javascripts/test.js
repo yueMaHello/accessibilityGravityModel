@@ -276,8 +276,6 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         
         var MouseOverhighlightGraphic = function(evt) {
           hoverZone = evt.graphic.attributes.TAZ_New;
-          console.log(hoverZone)
-
           var access = accessibilityResult[hoverZone];
           map.infoWindow.setTitle("<b>Zone Number: </b>"+hoverZone);
           if(typeof(access)!=='undefined'){
@@ -297,9 +295,7 @@ function buildMatrixLookup(arr) {
   var verbal = index[0];
   for(var i =0; i<arr.length;i++){
     var k = arr[i][verbal];
-  
     delete arr[i][verbal];
-  
     lookup[parseInt(k)] = Object.keys(arr[i]).reduce((obj, key) => (obj[parseInt(key)] = Number(arr[i][key]),obj), {});
   }
 
