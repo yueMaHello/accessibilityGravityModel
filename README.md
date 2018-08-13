@@ -38,4 +38,7 @@ This is a Nodejs web application using Arcgis Javascript API. It can analyze the
 2. Change 'new Color([255, 255, 255,0.90])' to some other RGB color.
       
 #### Woops, the App can't run after changing a new dataset:
- 1. You need to restart the server from terminal/cmd (Rerun 'npm start').
+1. You need to restart the server from terminal/cmd (Rerun 'npm start').
+#### What is the use of './public/python/mergeCSV.py'
+1. It is python script which can combine several csv files together into a new one. In './public/data' folder, you can see there are 'Transit_1wait_Time_AM_Cr_mf1.csv', 'Transit_IVT_Time_AM_Cr_mf492.csv', 'Transit_RemWait_Time_AM_Cr_mf489.csv', 'Transit_Transfer_Time_AM_Cr_mf491.csv', and 'Transit_Walk_Time_AM_Cr_mf491.csv'. You can combine these five csv files into a single one 'Transit_Total_Time_AM.csv'. 'Transit_Total_Time_AM.csv' is the one used in the App.
+
