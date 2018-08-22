@@ -90,7 +90,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             outFields: ["*"],
             infoTemplate: template
         });
-        var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0?token=8ulK33e1cubPoKiLq5MxH9EpaN_wuyYRrMTiwsYkGKnPgYFbII8tkvV5i9Dk6tz2jVqY-_Zx-0-GXY3DeSVbtpo0NlLxEjFuPwpccMNBTGZwZsVYNrqBui-6DhEyve8rnD3qGPg_2pun9hFotDWSmlWAQn41B_Sop7pr9KLSS64H_CiMRPW0GZ9Bn6gPWkR8d0CZQ6fUoctmBUJp4gvRdf6vroPETCE9zJ2OFUdPto1Xm2pxvDc7Y5mDPT_ZOXbi",{
+        var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0?token=fq-1SwmcgAepCE9kB7p1ySJqJl4Tj4PVlZ1Bcbso2r9RBv1BCdET4mcpDLteGYoyOFSkDrwBRilzkmzMzr5KyZKLhqCULVNivn-LyH2WXxPESB1NRpyXQZz9NiNEdGGXdB3zQM1cH17XBTu8-keOmeUMh0UaJQ7VGweheUREf9wPsPdThCFpIwfFZ-ZrKuatP4JDGf8qZLZUQpYii04YFz_Po6MOQmuWcKAVMbFYIWIQTiSXgGJRiXA0BUpzOio3",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
         });
