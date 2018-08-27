@@ -5,7 +5,7 @@ This is a Nodejs web application using Arcgis Javascript API. It can analyze the
 1. If you haven't downloaded Nodejs on your computer, you need to download it and add it into PATH.
 2. Download this folder
 3. Browse to the root of the folder
-4. Open the terminal/cmd and go to the root of the App './jobAccessibility'. 
+4. Open the terminal/cmd and go to the root of the App './Accessibility'. 
 5. Type 'npm install'
 6. Type 'npm intall express --save'
 7. Type 'npm install http-errors --save'
@@ -14,11 +14,11 @@ This is a Nodejs web application using Arcgis Javascript API. It can analyze the
 
 #### From Lab Computer I
 1. Browse to the root of the folder
-2. Open the terminal/cmd and go to the root of the App './jobAccessibility'. 
+2. Open the terminal/cmd and go to the root of the App './Accessibility'. 
 3. In the './public/data/' folder, all the data source is provided.
 
 ## Run
-1. Use terminal/cmd to go to the root of the App './jobAccessibility'. 
+1. Use terminal/cmd to go to the root of the App './Accessibility'. 
 2. Type 'npm start'
 2. Browse 'http://localhost:3032' or http://162.106.202.155:3032/
 
