@@ -33,7 +33,7 @@ There is two radio buttons on the bottom of the left corner which can change the
  2. In './public/javascript/test.js', you can find the current layer: 'https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0'. If you want to change it to another layer, you can create you own arcgis online account and upload the layer to the arcgis server. You need to replace the url into a new one. You can also ask Sandeep to access Yue Ma's arcgis account.
 #### If you want to change the legend:
 1. Open './public/javascripts/test.js' file, search 'readerer.addBreak' to show that part of code.
-2. After looking into the dataset, you can figure out that different dataset has different data range. It is unrealistic to use a single set of breakpoints to render all the csv files. When the user views the summation of the accessibility (slider is off), findRangeForAccessibilityCalculation(jobType) is used to find a proper legend reference. When the user views single accessibility (slider is on), findRangeForIndividualCalcultion(jobType) is used.
+2. After looking into the dataset, you can figure out that different dataset has different data range. It is unrealistic to use a single set of breakpoints to render all the csv files. When the user views the summation of the accessibility (slider is off), findRangeForAccessibilityCalculation(jobType) is used to find a proper legend reference. When the user views zone-to-zone accessibility (slider is on), findRangeForIndividualCalcultion(jobType) is used.
 
 #### If you want to change the legend color:
 1. Open './public/javascripts/test.js' file, search 'readerer.addBreak' to show that part of code.
