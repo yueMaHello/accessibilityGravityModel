@@ -1,6 +1,24 @@
+/*
+This app can show the accessibility based on time period and travel method
+The accessibility is the logsum of logsum.
+There is one slider on the top of the left corner of the map which can switch between showing a static accessibility and a zone-to-zone accessibility
+There is two radio buttons on the bottom of the left corner which can change the scale of the map.
+If the user selects 'relative to auto', then all the accessibility is based on the best scale of 'Auto AM'.
+If the user selects 'Absolute', the app will sort the selected matrix from smallest to largest and divide the sorted array into bins for each color.
+By this method, the gravity map can have a beautiful and balanced look.
+
+If you want to update the data, it is important to follow the data format. If you want to change the files' names,
+you can change the following initialization variables.
+*/
+
 var map;
+//csv files' names
+//you can update the name if you are trying to use new datasets
 var Distance_mf2 = '../data/Distance_mf2.csv';
 var SOV_AUTO_Time_AM_Cr_mf1 = '../data/SOV_AUTO_Time_AM_Cr_mf1.csv';
+
+//Transit_Total_Time_AM.csv is a summation of 'Transit_****.csv'.
+//You can use /python/mergeCSV.py script to do this process firstly and then get the csv we need in this App
 var Transit_Total_Time_AM = '../data/Transit_Total_Time_AM.csv';
 var Walk_Time_AM_Cr_mf486 = '../data/Walk_Time_AM_Cr_mf486.csv';
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv';
@@ -14,30 +32,36 @@ var check = false;
 var largestIndividualArray = [];
 var largestAccessibilityArray = [];
 var relativeLegend = true;
-var selectZone = '101'; //default
+var selectZone = '101'; //default selected zone when the user enters the web page
+//read data one by one and store data in the memory
 q.defer(d3.csv,Distance_mf2)
     .defer(d3.csv,SOV_AUTO_Time_AM_Cr_mf1)
     .defer(d3.csv,Transit_Total_Time_AM)
     .defer(d3.csv,Walk_Time_AM_Cr_mf486)
     .defer(d3.csv,POP_EMP_PSE_HS)
     .await(brushMap);
+//main function
 function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,pop_emp_pse_hs){
+    //store data into a json format
+    //it will be very convenient to be used later
+    //for example, if the user selects 'Auto, AM' option, you can get the data through travelTypeDict['A_AM']
     travelTypeDict = {
       'A_AM':buildMatrixLookup(sov_auto_time),
       'D':buildMatrixLookup(distance_mf2),
       'T_AM':buildMatrixLookup(transit_total_time),
       'W_AM': buildMatrixLookup(walk_time)  
     };
+    //store population and employment into json format
     popEmp = buildMatrixLookup2(pop_emp_pse_hs);
     require(["esri/renderers/SimpleRenderer","esri/SpatialReference","esri/geometry/Point",
-"esri/geometry/webMercatorUtils","dojo/dom",
+        "esri/geometry/webMercatorUtils","dojo/dom",
       "esri/layers/GraphicsLayer",
       "esri/geometry/Polyline",
       "esri/geometry/Extent",
       "dojo/dom-construct",
       "esri/tasks/query",
       "esri/graphic",
- "dojo/_base/array",
+        "dojo/_base/array",
       "esri/dijit/Popup",
       "esri/dijit/PopupTemplate",
       "dojo/dom-class",
@@ -53,8 +77,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,SimpleMarkerSymbol,
         ClassBreaksRenderer,
         Color, domStyle
-    ) {      
-        var viewSpatialReference = new SpatialReference({wkid: 4326});
+    ) {
+        //store map's onClick or onHover connections
         var connections = [];
         // var PSELayer;
         var popup = new Popup({  
@@ -72,100 +96,76 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             slider: false
         });
         map.setInfoWindowOnClick(true);
-        
-        
+        //Control baselayer
         var toggle = new BasemapToggle({
            map: map,
            basemap: "streets"
          }, "viewDiv");
          
         toggle.startup();
-         
+        //text template related to your mouse clicking event
         var template = new InfoTemplate();
         template.setContent(getTextContent);
+        //Since it is very hard to use the same scale to show all the matrices
+        //it is necessary to automatically adjust the scale based on the data distribution of all the matrices
         largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
+        //get accessiblity through the selected matrix
         accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
-        var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0?token=8gOmRemAl8guD3WA_rfLwe50SgsEvaZzIcXIraH9xC3NQPCLraLwcHIkz3osWU-SHUdSKO1N6rCnWDF_CzWLFlFFUCeugETS44f409SsCtX9eC-HoX0dkXZj2vQD1SsboTGNgAzLDtG-BfIv0FnlWBNqq84hC5a6e7lj2Tt1oV8V0WxGiCE7rtaXgxZr18TZur-l_T6gWW2jDh1mt5q0mqty8vc133DvOtg5JhtGm8OTdn9rYtscRKu66B153RYB",{
+        var featureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
             infoTemplate: template
         });
-        var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0?token=fq-1SwmcgAepCE9kB7p1ySJqJl4Tj4PVlZ1Bcbso2r9RBv1BCdET4mcpDLteGYoyOFSkDrwBRilzkmzMzr5KyZKLhqCULVNivn-LyH2WXxPESB1NRpyXQZz9NiNEdGGXdB3zQM1cH17XBTu8-keOmeUMh0UaJQ7VGweheUREf9wPsPdThCFpIwfFZ-ZrKuatP4JDGf8qZLZUQpYii04YFz_Po6MOQmuWcKAVMbFYIWIQTiSXgGJRiXA0BUpzOio3",{
+        var lrtFeatureLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/LRT/FeatureServer/0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
         });
-        
-        // PSELayer = addPSELocation();
-        var pseLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/pse/FeatureServer/0?token=Z-SDaJDXBiNKlWI9q05NjRiKcjoysekbM2vYNhYD6gETiJzS7IggUYgO3fQ8yua2FMceup7wEsz440QpyduUiuu-OoAUMsjIOaqgrhjAU3oqoorIKY6HsM1-jpLgNPof-YrNhlTq04cJs9Soi0RqIjr3gCtuCaR74_0mLSjVN42R2okTrgOl7pr7thQEdveBKh6zNGgmrYMJiGtGA6dLwUgpJC59-9RL63-SoxDZdLDiwygEyy3wMP_lKcCbOPPU",{
+        var pseLayer = new FeatureLayer("https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/pse/FeatureServer/0",{
             mode: FeatureLayer.MODE_SNAPSHOT,
             outFields: ["*"],
-      
         });
         featureLayer.on('click',function(evt){
           var graphic = evt.graphic;
           selectZone = graphic.attributes.TAZ_New;
-          
         });
-    
         var legendLayers = [];
+        //add layers on the map
         map.on('load',function(){
             map.on("mouse-move", showCoordinates);
-            
             map.addLayer(featureLayer);
             map.addLayer(lrtFeatureLayer);
-            map.addLayer(pseLayer)
+            map.addLayer(pseLayer);
+            //generate legends
             legendLayers.push({layer:pseLayer,title:'Institutions'},{layer:lrtFeatureLayer,title:'LRT'},{ layer: featureLayer, title: 'Legend' });
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
-  
-        // 
-        // function addPSELocation(){
-        //   var squareSymbol = new SimpleMarkerSymbol({
-        //       "color":[0,0,128,128],
-        //       "size":10,
-        //       "angle":0,
-        //       "xoffset":0,
-        //       "yoffset":0,
-        //       "type":"esriSMS",
-        //       "style":"esriSMSCircle",
-        //       "outline":{"color":[0,0,128,255],
-        //           "width":1,
-        //           "type":"esriSLS",
-        //           "style":"esriSLSSolid"
-        //       }
-        //   });
-        //   var layer = new GraphicsLayer();
-        //   var PSEpoints = [[-113.525,53.528],[-113.413,53.524],[-113.451,53.531],[-113.505,53.568],[-113.506,53.547],[-113.587,53.54],[-113.632,53.640],[-113.508,53.540]];
-        //   arrayUtils.forEach(PSEpoints, function(point) {
-        //      var graphic = new Graphic(new Point(point),squareSymbol);
-        //      layer.add(graphic);
-        //   });
-        //   return layer;
-        // }
-        
+
+        //when the user changes his selection, the map should change as well
+        //this function will redraw the layer on the map in a different color
         function redrawLayer(ClassBreaksRenderer,accessibilityResult){
             $('.legendClass').remove();
             var sort = [];
+            //slider checker
             if(check === true){
               var largestIndividualResultArray = Object.values(largestIndividualArray);
               sort = largestIndividualResultArray.sort((prev,next)=>prev-next); //from smallest to largest
-              
             }
             else{
               var largestAccessibilityResultArray = Object.values(largestAccessibilityArray);          
               sort = largestAccessibilityResultArray.sort((prev,next)=>prev-next); //from smallest to largest
             }
-
+            //chunk size for each color
             var chunkZones = 74;        
             sort = sort.map(function (x) { 
               return parseInt(x, 10); 
             });  
             var symbol = new SimpleFillSymbol();
-
+            //a new class breaks render.
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
               var r = accessibilityResult[feature.attributes.TAZ_New];
               return accessibilityResult[feature.attributes.TAZ_New];
             });
+            //add break points and color information
             renderer.addBreak(0, sort[chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([255, 255, 255,0.90])));
             renderer.addBreak(sort[chunkZones], sort[2*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([	249, 238, 237,0.90])));
             renderer.addBreak(sort[2*chunkZones], sort[3*chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([243, 224, 219,0.90])));
@@ -187,6 +187,8 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             renderer.addBreak(sort[sort.length-1]+1, Infinity, new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([5, 80, 15,0.90])));
             featureLayer.setRenderer(renderer);
             featureLayer.redraw();
+            //Since an id of <div> can be only used once,
+            //I dynamically generate the id so that I can update the legend
             var string = 'dynamicLegend'+ Math.random().toString(36).substring(7);
             $('#legendDiv').append('<div class="legendClass" id = "'+string+'"</div>');  
             var legend = new Legend({
@@ -197,12 +199,13 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
         }
 
         function getTextContent (graphic) {
-
           selectZone = graphic.attributes.TAZ_New;
           var speciesName = "<b>Value: </b><br/>" +
                           "<i>" + accessibilityResult[graphic.attributes.TAZ_New] + "</i>";
           return  speciesName;
         }
+        //radio button listener
+        //if the user press the radio button, this function will be called
         $('input:radio[name=selectLegend]').change(function() {
             if (this.value === 'relative') {
                 relativeLegend = true;
@@ -218,6 +221,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             }
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
+        //travel method listener
         $("#travelMethod").change(function(){
             travelType = $(this).val();
             if(check === true){
@@ -234,6 +238,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
             }
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
+        //job type listener
         $('#jobType').change(function(){
           jobType = $(this).val();
           if(check === true){
@@ -246,6 +251,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
           }
           redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
+        //interation button listener
         $("#interact").click(function(e, parameters) {
             if($("#interact").is(':checked')){
                 check = true;
@@ -263,17 +269,20 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
               redrawLayer(ClassBreaksRenderer,accessibilityResult);
             }
         });
+        //show lat and lng on the left corner. Not an important feature
         function showCoordinates(evt) {
             //the map is in web mercator but display coordinates in geographic (lat, long)
             var mp = webMercatorUtils.webMercatorToGeographic(evt.mapPoint);
             //display mouse coordinates
             dom.byId("info").innerHTML = mp.x.toFixed(3) + ", " + mp.y.toFixed(3);
           }
+
+        //highlight the clicked zone
         var MouseClickhighlightGraphic = function(evt) {
             accessibilityResult = individualCaculation(travelTypeDict[travelType],jobType,selectZone);
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         };
-        
+        //show text info for hovered zone
         var MouseOverhighlightGraphic = function(evt) {
           hoverZone = evt.graphic.attributes.TAZ_New;
           var access = accessibilityResult[hoverZone];
@@ -288,7 +297,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
       };
     });
 }
-
+//json converter for logsum matrices
 function buildMatrixLookup(arr) {
   var lookup = {};
   var index = arr.columns;
@@ -301,7 +310,7 @@ function buildMatrixLookup(arr) {
 
   return lookup;
 }
-
+//json converter for employee and population csv file
 function buildMatrixLookup2(arr) {
     var lookup = {};
     var zoneName = Object.keys(arr[0])[1];
@@ -315,6 +324,9 @@ function buildMatrixLookup2(arr) {
     });
     return lookup;
 }
+//do logsum of logsum calculation
+//from one zone to any other zones
+//the result will be a 1-d array
 function accessibilityCalculation(transitMatrix,jobType){
     var accessibilityArray ={};
     for (var zone in transitMatrix){
@@ -332,6 +344,9 @@ function accessibilityCalculation(transitMatrix,jobType){
     }
     return accessibilityArray;
 }
+//do logsum of logsum calculation
+//from one zone to another zone
+//the result will be a matrix
 function individualCaculation(transitMatrix,jobType,selectedZone){
     var accessibilityArray = {};
     var enr = parseFloat(popEmp[selectedZone][jobType]);
@@ -345,6 +360,7 @@ function individualCaculation(transitMatrix,jobType,selectedZone){
     }
     return accessibilityArray;
 }
+//Find the range of the matrix when the user chooses to view zone-to-zone map
 function findRangeForIndividualCalcultion(jobType){
   if(relativeLegend === true){
     var dict = {};
@@ -380,8 +396,9 @@ function findRangeForIndividualCalcultion(jobType){
     return largestAccessibilityArray;
   }
 }
-
+//Find the range of accessibility when the user chooses to view a static zone-to-all map
 function findRangeForAccessibilityCalculation(jobType){
+    //relative legend, then it means relative to A_AM
   if(relativeLegend === true){
     return accessibilityCalculation(travelTypeDict.A_AM,jobType);
   }
@@ -390,3 +407,6 @@ function findRangeForAccessibilityCalculation(jobType){
   }
 
 }
+
+
+
