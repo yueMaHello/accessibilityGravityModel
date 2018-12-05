@@ -1,5 +1,9 @@
 # Accessibility-Gravity Model
-This is a Nodejs web application using Arcgis Javascript API. It can analyze the job/institution accessibilty by different travel methods.
+This app can show the accessibility based on time period and travel method. The accessibility is the logsum of logsum.
+There is one slider on the top of the left corner of the map which can switch between showing a static accessibility and a zone-to-zone accessibility. 
+
+There is two radio buttons on the bottom of the left corner which can change the scale of the map. If the user selects 'relative to auto', then all the accessibility is based on the best scale of 'Auto AM'. If the user selects 'Absolute', the app will sort the selected matrix from smallest to largest and divide the sorted array into bins for each color. By this method, the gravity map can have a beautiful and balanced look.
+
 ## Set Up
 #### From Github:
 1. If you haven't downloaded Nodejs on your computer, you need to download it and add it into PATH.
@@ -22,14 +26,14 @@ This is a Nodejs web application using Arcgis Javascript API. It can analyze the
 2. Type 'npm start'
 2. Browse 'http://localhost:3032' or http://162.106.202.155:3032/
 
-## Use tips:
+## Tips:
 
 #### If you want to update the TravelZoneLayer shape file:
  1. The map layer is not stored in localhost. It is stored in the arcgis online server.
  2. In './public/javascript/test.js', you can find the current layer: 'https://services8.arcgis.com/FCQ1UtL7vfUUEwH7/arcgis/rest/services/newestTAZ/FeatureServer/0'. If you want to change it to another layer, you can create you own arcgis online account and upload the layer to the arcgis server. You need to replace the url into a new one. You can also ask Sandeep to access Yue Ma's arcgis account.
 #### If you want to change the legend:
 1. Open './public/javascripts/test.js' file, search 'readerer.addBreak' to show that part of code.
-2. After looking into the dataset, you can figure out that different dataset has different data range. It is unrealistic to use a single set of breakpoints to render all the csv files. When the user views the summation of the accessibility (slider is off), findRangeForAccessibilityCalculation(jobType) is used to find a proper legend reference. When the user views single accessibility (slider is on), findRangeForIndividualCalcultion(jobType) is used.
+2. After looking into the dataset, you can figure out that different dataset has different data range. It is unrealistic to use a single set of breakpoints to render all the csv files. When the user views the summation of the accessibility (slider is off), findRangeForAccessibilityCalculation(jobType) is used to find a proper legend reference. When the user views zone-to-zone accessibility (slider is on), findRangeForIndividualCalcultion(jobType) is used.
 
 #### If you want to change the legend color:
 1. Open './public/javascripts/test.js' file, search 'readerer.addBreak' to show that part of code.
