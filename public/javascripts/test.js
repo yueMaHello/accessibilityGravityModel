@@ -21,9 +21,10 @@ var zoneToZoneFiles = {
     'A_AM': '../data/SOV_AUTO_Time_AM_Cr_mf1.csv',
     'T_AM': '../data/Transit_Total_Time_AM.csv',
     'W_AM':  '../data/Walk_Time_AM_Cr_mf486.csv',
+    'W_Repeat_AM':  '../data/WalkRepeat_Time_AM_Cr_mf486.csv',
 };
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv'; //pop,emp,pse,hs data!
-var travelType = 'A_AM';//default travel type, you could change it to any key of zoneToZoneFiles
+var travelType = 'T_AM';//default travel type, you could change it to any key of zoneToZoneFiles
 var jobType = 'Total Employment';
 var popEmp;
 var accessibilityResult;
@@ -203,6 +204,7 @@ function brushMap(error){
             legend.startup();    
         }
 
+
         function getTextContent (graphic) {
           selectZone = graphic.attributes.TAZ_New;
           var speciesName = "<b>Value: </b><br/>" +
@@ -260,6 +262,7 @@ function brushMap(error){
         $("#interact").click(function(e, parameters) {
             if($("#interact").is(':checked')){
                 check = true;
+                $('#sliderNote').html("Logsum");
                 connections.push(dojo.connect(map, 'onClick', MouseClickhighlightGraphic));
                 connections.push(dojo.connect(featureLayer, 'onMouseOver', MouseOverhighlightGraphic));
                 largestIndividualArray = findRangeForIndividualCalcultion(jobType);
@@ -269,6 +272,7 @@ function brushMap(error){
             else{
               check = false;
               dojo.forEach(connections,dojo.disconnect);
+                $('#sliderNote').html("Accessibility");
               largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
               accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
               redrawLayer(ClassBreaksRenderer,accessibilityResult);
@@ -385,7 +389,7 @@ function findRangeForIndividualCalcultion(jobType){
         items.pop();                  // Remove that last element
     }
     TAZ = items[parseInt(items.length/22)][0];
-    var largestIndividualArray = individualCaculation(travelTypeDict.A_AM,jobType,TAZ);
+    var largestIndividualArray = individualCaculation(travelTypeDict.T_AM,jobType,TAZ);
     return largestIndividualArray;
   }
   else{
@@ -405,7 +409,7 @@ function findRangeForIndividualCalcultion(jobType){
 function findRangeForAccessibilityCalculation(jobType){
     //relative legend, then it means relative to A_AM
   if(relativeLegend === true){
-    return accessibilityCalculation(travelTypeDict.A_AM,jobType);
+    return accessibilityCalculation(travelTypeDict.T_AM,jobType);
   }
   else{
     return accessibilityCalculation(travelTypeDict[travelType],jobType);
