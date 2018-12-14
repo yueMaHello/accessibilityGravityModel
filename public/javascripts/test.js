@@ -22,8 +22,8 @@ var zoneToZoneFiles = {
     'T_AM': '../data/Transit_Total_Time_AM.csv',
     'W_AM':  '../data/Walk_Time_AM_Cr_mf486.csv',
 };
-var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv';
-var travelType = 'A_AM';
+var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv'; //pop,emp,pse,hs data!
+var travelType = 'A_AM';//default travel type, you could change it to any key of zoneToZoneFiles
 var jobType = 'Total Employment';
 var popEmp;
 var accessibilityResult;
