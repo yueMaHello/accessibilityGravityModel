@@ -11,7 +11,7 @@ If you want to update the data, it is important to follow the data format. If yo
 you can change the following initialization variables.
 */
 
-var map;
+
 //csv files' names
 //you can update the name if you are trying to use new datasets
 //Transit_Total_Time_AM.csv is a summation of 'Transit_****.csv'.
@@ -21,10 +21,12 @@ var zoneToZoneFiles = {
     'A_AM': '../data/SOV_AUTO_Time_AM_Cr_mf1.csv',
     'T_AM': '../data/Transit_Total_Time_AM.csv',
     'W_AM':  '../data/Walk_Time_AM_Cr_mf486.csv',
-    'W_Repeat_AM':  '../data/WalkRepeat_Time_AM_Cr_mf486.csv',
 };
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv'; //pop,emp,pse,hs data!
-var travelType = 'T_AM';//default travel type, you could change it to any key of zoneToZoneFiles
+var travelZoneLayerIdTitle = 'TAZ_New';//change it when you update the travel zone layer
+var map;
+var travelType;
+var defaultTravelType = 'A_AM'; //default travel type, you could change it to any key of zoneToZoneFiles
 var jobType = 'Total Employment';
 var popEmp;
 var accessibilityResult;
@@ -42,52 +44,45 @@ for(var key in zoneToZoneFiles){
 q.defer(d3.csv,POP_EMP_PSE_HS).await(brushMap);
 //main function
 function brushMap(error){
+    //The variable: arguments, stores all the csv matrices. Convert them to desirable format one by one.
     if (!error) {
+        travelType = defaultTravelType;
+        //store data into a json format
+        //it will be very convenient to be used later
+        //for example, if the user selects 'Auto, AM' option, you can get the data through travelTypeDict['A_AM']
         travelTypeDict = {};
-        // Either simply loop them:
+        //Simply loop them and then store to travelTypeDict:
         for (var i=1; i<arguments.length-1; i++){
             travelTypeDict[ Object.keys(zoneToZoneFiles)[i-1]] = buildMatrixLookup(arguments[i]);
         }
         popEmp = buildMatrixLookup2(arguments[arguments.length-1])
     }
     else{
-
         alert('Error Occurs when loading data!');
         return;
     }
 
-    //store data into a json format
-    //it will be very convenient to be used later
-    //for example, if the user selects 'Auto, AM' option, you can get the data through travelTypeDict['A_AM']
     require(["esri/renderers/SimpleRenderer","esri/SpatialReference","esri/geometry/Point",
-        "esri/geometry/webMercatorUtils","dojo/dom",
-      "esri/layers/GraphicsLayer",
-      "esri/geometry/Polyline",
-      "esri/geometry/Extent",
-      "dojo/dom-construct",
-      "esri/tasks/query",
-      "esri/graphic",
-      "dojo/_base/array",
-      "esri/dijit/Popup",
-      "esri/dijit/PopupTemplate",
-      "dojo/dom-class",
-      "esri/dijit/BasemapToggle",
-      "esri/dijit/Legend",
-        "esri/map", "esri/layers/FeatureLayer",
-        "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol","esri/symbols/SimpleMarkerSymbol",
-        "esri/renderers/ClassBreaksRenderer",
-        "esri/Color", "dojo/dom-style", "dojo/domReady!"
-    ], function(SimpleRenderer,SpatialReference,Point,webMercatorUtils,dom,GraphicsLayer,Polyline,
-      Extent,domConstruct,
-      Query,Graphic,arrayUtils,Popup, PopupTemplate,domClass,BasemapToggle,Legend,Map, FeatureLayer,
-        InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,SimpleMarkerSymbol,
-        ClassBreaksRenderer,
-        Color, domStyle
+      "esri/geometry/webMercatorUtils","dojo/dom", "esri/layers/GraphicsLayer",
+      "esri/geometry/Polyline", "esri/geometry/Extent", "dojo/dom-construct",
+      "esri/tasks/query", "esri/graphic", "dojo/_base/array",
+      "esri/dijit/Popup", "esri/dijit/PopupTemplate", "dojo/dom-class",
+      "esri/dijit/BasemapToggle", "esri/dijit/Legend", "esri/map",
+      "esri/layers/FeatureLayer", "esri/InfoTemplate", "esri/symbols/SimpleFillSymbol",
+      "esri/symbols/SimpleLineSymbol","esri/symbols/SimpleMarkerSymbol", "esri/renderers/ClassBreaksRenderer",
+      "esri/Color", "dojo/dom-style", "dojo/domReady!"
+    ], function(SimpleRenderer,SpatialReference,Point,
+                webMercatorUtils,dom,GraphicsLayer,
+                Polyline, Extent,domConstruct,
+                Query,Graphic,arrayUtils,
+                Popup, PopupTemplate,domClass,
+                BasemapToggle,Legend,Map, FeatureLayer,
+                InfoTemplate, SimpleFillSymbol,SimpleLineSymbol,
+                SimpleMarkerSymbol, ClassBreaksRenderer, Color, domStyle
     ) {
         //store map's onClick or onHover connections
         var connections = [];
-        // var PSELayer;
-        var popup = new Popup({  
+        var popup = new Popup({
           fillSymbol:
             new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
               new Color([255, 0, 0]), 2)
@@ -102,7 +97,7 @@ function brushMap(error){
             slider: false
         });
         map.setInfoWindowOnClick(true);
-        //Control baselayer
+        //Control base layer
         var toggle = new BasemapToggle({
            map: map,
            basemap: "streets"
@@ -113,7 +108,7 @@ function brushMap(error){
         var template = new InfoTemplate();
         template.setContent(getTextContent);
         //Since it is very hard to use the same scale to show all the matrices
-        //it is necessary to automatically adjust the scale based on the data distribution of all the matrices
+        //It is necessary to automatically adjust the scale based on the data distribution of all the matrices
         largestAccessibilityArray = findRangeForAccessibilityCalculation(jobType);
         //get accessiblity through the selected matrix
         accessibilityResult = accessibilityCalculation(travelTypeDict[travelType],jobType);
@@ -132,7 +127,8 @@ function brushMap(error){
         });
         featureLayer.on('click',function(evt){
           var graphic = evt.graphic;
-          selectZone = graphic.attributes.TAZ_New;
+
+          selectZone = graphic.attributes[travelZoneLayerIdTitle];
         });
         var legendLayers = [];
         //add layers on the map
@@ -146,7 +142,7 @@ function brushMap(error){
             redrawLayer(ClassBreaksRenderer,accessibilityResult);
         });
 
-        //when the user changes his selection, the map should change as well
+        //when the user changes his selection, the map should change correspondingly
         //this function will redraw the layer on the map in a different color
         function redrawLayer(ClassBreaksRenderer,accessibilityResult){
             $('.legendClass').remove();
@@ -168,8 +164,8 @@ function brushMap(error){
             var symbol = new SimpleFillSymbol();
             //a new class breaks render.
             var renderer = new ClassBreaksRenderer(symbol, function(feature){
-              var r = accessibilityResult[feature.attributes.TAZ_New];
-              return accessibilityResult[feature.attributes.TAZ_New];
+              var r = accessibilityResult[feature.attributes[travelZoneLayerIdTitle]];
+              return accessibilityResult[feature.attributes[travelZoneLayerIdTitle]];
             });
             //add break points and color information
             renderer.addBreak(0, sort[chunkZones], new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,new Color([0,0,0,0.1]),1)).setColor(new Color([255, 255, 255,0.90])));
@@ -206,9 +202,9 @@ function brushMap(error){
 
 
         function getTextContent (graphic) {
-          selectZone = graphic.attributes.TAZ_New;
+          selectZone = graphic.attributes[travelZoneLayerIdTitle];
           var speciesName = "<b>Value: </b><br/>" +
-                          "<i>" + accessibilityResult[graphic.attributes.TAZ_New] + "</i>";
+                          "<i>" + accessibilityResult[graphic.attributes[travelZoneLayerIdTitle]] + "</i>";
           return  speciesName;
         }
         //radio button listener
@@ -293,7 +289,7 @@ function brushMap(error){
         };
         //show text info for hovered zone
         var MouseOverhighlightGraphic = function(evt) {
-          hoverZone = evt.graphic.attributes.TAZ_New;
+          hoverZone = evt.graphic.attributes[travelZoneLayerIdTitle];
           var access = accessibilityResult[hoverZone];
           map.infoWindow.setTitle("<b>Zone Number: </b>"+hoverZone);
           if(typeof(access)!=='undefined'){
@@ -389,7 +385,7 @@ function findRangeForIndividualCalcultion(jobType){
         items.pop();                  // Remove that last element
     }
     TAZ = items[parseInt(items.length/22)][0];
-    var largestIndividualArray = individualCaculation(travelTypeDict.T_AM,jobType,TAZ);
+    var largestIndividualArray = individualCaculation(travelTypeDict[defaultTravelType],jobType,TAZ);
     return largestIndividualArray;
   }
   else{
@@ -407,9 +403,9 @@ function findRangeForIndividualCalcultion(jobType){
 }
 //Find the range of accessibility when the user chooses to view a static zone-to-all map
 function findRangeForAccessibilityCalculation(jobType){
-    //relative legend, then it means relative to A_AM
+    //relative legend, then it means relative to defaultTravelType
   if(relativeLegend === true){
-    return accessibilityCalculation(travelTypeDict.T_AM,jobType);
+    return accessibilityCalculation(travelTypeDict[defaultTravelType],jobType);
   }
   else{
     return accessibilityCalculation(travelTypeDict[travelType],jobType);

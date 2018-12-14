@@ -15,16 +15,15 @@ block content
         div(id = 'travelMethodDiv')
           Thing Travel Mode: 
           select(id = 'travelMethod' autocomplete="off")
-              //option(value=" ") Select a travel method
-              option(value = "A_AM") Auto AM
-              option(value = "T_AM" selected) Transit AM
+              //default travel mode should have 'selected' label
+              option(value = "A_AM" selected) Auto AM
+              option(value = "T_AM") Transit AM
               option(value = "W_AM") Walk AM
               option(value = "D") Distance
-              option(value = "W_Repeat_AM") Walk Repeat
         div(id = 'jobTypeDiv')
           Thing Access To: 
           select(id = 'jobType' autocomplete="off")
-              //option(value=" ") Select a job typ
+              //default job type should have 'selected' label
               option(value = "Total Employment" selected) Work
               option(value = "PSE Enrolment") PSE Enrolment
               option(value = "High School Enrl") High School Enrl
@@ -34,7 +33,7 @@ block content
     div(id="legendControl")
       label(class='container')
         input(type = 'radio' name = 'selectLegend' id = 'relativeLegend' value = 'relative' checked)
-        Thing Relative to Transit
+        Thing Relative to Auto
       label(class='container')
         input(type = 'radio' name = 'selectLegend' id = 'absoluteLegend' value = 'absolute')
         Thing Absolute
