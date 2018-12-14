@@ -14,13 +14,14 @@ you can change the following initialization variables.
 var map;
 //csv files' names
 //you can update the name if you are trying to use new datasets
-var Distance_mf2 = '../data/Distance_mf2.csv';
-var SOV_AUTO_Time_AM_Cr_mf1 = '../data/SOV_AUTO_Time_AM_Cr_mf1.csv';
-
 //Transit_Total_Time_AM.csv is a summation of 'Transit_****.csv'.
 //You can use /python/mergeCSV.py script to do this process firstly and then get the csv we need in this App
-var Transit_Total_Time_AM = '../data/Transit_Total_Time_AM.csv';
-var Walk_Time_AM_Cr_mf486 = '../data/Walk_Time_AM_Cr_mf486.csv';
+var zoneToZoneFiles = {
+    'D': '../data/Distance_mf2.csv',
+    'A_AM': '../data/SOV_AUTO_Time_AM_Cr_mf1.csv',
+    'T_AM': '../data/Transit_Total_Time_AM.csv',
+    'W_AM':  '../data/Walk_Time_AM_Cr_mf486.csv',
+};
 var POP_EMP_PSE_HS = '../data/2015_POP_EMP_PSE_HS.csv';
 var travelType = 'A_AM';
 var jobType = 'Total Employment';
@@ -34,25 +35,29 @@ var largestAccessibilityArray = [];
 var relativeLegend = true;
 var selectZone = '101'; //default selected zone when the user enters the web page
 //read data one by one and store data in the memory
-q.defer(d3.csv,Distance_mf2)
-    .defer(d3.csv,SOV_AUTO_Time_AM_Cr_mf1)
-    .defer(d3.csv,Transit_Total_Time_AM)
-    .defer(d3.csv,Walk_Time_AM_Cr_mf486)
-    .defer(d3.csv,POP_EMP_PSE_HS)
-    .await(brushMap);
+for(var key in zoneToZoneFiles){
+    q = q.defer(d3.csv,zoneToZoneFiles[key])
+}
+q.defer(d3.csv,POP_EMP_PSE_HS).await(brushMap);
 //main function
-function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,pop_emp_pse_hs){
+function brushMap(error){
+    if (!error) {
+        travelTypeDict = {};
+        // Either simply loop them:
+        for (var i=1; i<arguments.length-1; i++){
+            travelTypeDict[ Object.keys(zoneToZoneFiles)[i-1]] = buildMatrixLookup(arguments[i]);
+        }
+        popEmp = buildMatrixLookup2(arguments[arguments.length-1])
+    }
+    else{
+
+        alert('Error Occurs when loading data!');
+        return;
+    }
+
     //store data into a json format
     //it will be very convenient to be used later
     //for example, if the user selects 'Auto, AM' option, you can get the data through travelTypeDict['A_AM']
-    travelTypeDict = {
-      'A_AM':buildMatrixLookup(sov_auto_time),
-      'D':buildMatrixLookup(distance_mf2),
-      'T_AM':buildMatrixLookup(transit_total_time),
-      'W_AM': buildMatrixLookup(walk_time)  
-    };
-    //store population and employment into json format
-    popEmp = buildMatrixLookup2(pop_emp_pse_hs);
     require(["esri/renderers/SimpleRenderer","esri/SpatialReference","esri/geometry/Point",
         "esri/geometry/webMercatorUtils","dojo/dom",
       "esri/layers/GraphicsLayer",
@@ -61,7 +66,7 @@ function brushMap(error,distance_mf2,sov_auto_time,transit_total_time,walk_time,
       "dojo/dom-construct",
       "esri/tasks/query",
       "esri/graphic",
-        "dojo/_base/array",
+      "dojo/_base/array",
       "esri/dijit/Popup",
       "esri/dijit/PopupTemplate",
       "dojo/dom-class",
